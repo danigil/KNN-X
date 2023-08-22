@@ -1,0 +1,204 @@
+import json
+from typing import List
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.datasets import mnist, cifar10
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier as RandomForest, HistGradientBoostingClassifier as HistGradientBoosting
+from sklearn.metrics import accuracy_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from joblib import Parallel, delayed
+import numpy as np
+import pandas as pd
+import h5py
+import os
+from sklearn.neighbors import KNeighborsClassifier
+from tqdm import tqdm
+from datasets.mnist import dataloader
+from timeit import default_timer as timer
+
+def generate_results(dataset: str, ks: List[int], run_num=0):
+    print('Generating results for dataset: ', dataset)
+    save_folder = os.path.join('results', dataset)
+    os.makedirs(save_folder, exist_ok=True)
+    save_path = os.path.join(save_folder, 'results.txt')
+    
+    def smart_decision(clf, sample, neighbor_idxs):
+        X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
+        if np.all(y_neighbors == y_neighbors[0]):
+            return y_neighbors[0]
+        else:
+            clf.fit(X_neighbors, y_neighbors)
+
+            return clf.predict(sample.reshape(1, -1))[0]
+        
+    def pipeline_name(clf):
+        if clf.__class__.__name__ == "Pipeline":
+            return clf[-1].__class__.__name__
+        else:
+            return clf.__class__.__name__
+        
+    logistic_clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+    svm_clf = make_pipeline(StandardScaler(), SVC())
+
+    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier(), RandomForest(), HistGradientBoosting()]
+    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
+    clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
+    
+    if dataset == 'mnist':
+
+        dl = dataloader.ret_mnistdataloader()
+        (X_train, y_train),(X_test, y_test) = dl.load_data()
+        X_train = X_train.reshape(-1, 28 * 28)
+        X_test = X_test.reshape(-1, 28 * 28)
+        
+        X = np.vstack((X_train, X_test))
+        y = np.hstack((y_train, y_test))
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+    elif dataset == 'usps':
+        
+        with h5py.File('./datasets/usps.h5', 'r') as hf:
+                train = hf.get('train')
+                X_train = train.get('data')[:]
+                y_train = train.get('target')[:]
+                test = hf.get('test')
+                X_test = test.get('data')[:]
+                y_test = test.get('target')[:]
+        
+        X = np.vstack((X_train, X_test))
+        y = np.hstack((y_train, y_test))
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        
+    elif dataset == 'caltech101':
+        ds, info = tfds.load('caltech101', split='train+test', with_info=True)
+        train_dataset = dataset['train']
+        test_dataset = dataset['test']
+        
+        train_data = tfds.as_dataframe(train_dataset, info)
+        X_train = train_data['image'].to_numpy()
+        y_train = train_data['label'].to_numpy()
+        
+        test_data = tfds.as_dataframe(test_dataset, info)
+        X_test = test_data['image'].to_numpy()
+        y_test = test_data['label'].to_numpy()
+    elif dataset == 'wine':
+        df = pd.read_csv('./datasets/wine/processed.csv')
+        X = df.drop('label', axis=1)
+        y = df['label']
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        X_train = X_train.to_numpy(dtype=float)
+        X_test = X_test.to_numpy(dtype=float)
+        y_train = y_train.to_numpy(dtype=float)
+        y_test = y_test.to_numpy(dtype=float)
+    elif dataset == 'cifar10':
+        (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+        y_train = y_train.ravel()
+        y_test = y_test.ravel()
+        X_train = X_train.reshape(50000, -1)
+        X_test = X_test.reshape(10000, -1)
+    elif dataset == 'abalone':
+        df = pd.read_csv('./datasets/abalone/processed.csv')
+        X = df.drop('Sex', axis=1).to_numpy(dtype=float)
+        y = df['Sex'].to_numpy()
+        le = LabelEncoder()
+        y = le.fit_transform(y)
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y, random_state=1)
+    elif dataset == 'yeast':
+        df = pd.read_csv('./datasets/yeast/processed.csv')
+        X = df.drop('label', axis=1)
+        y = df['label']
+        
+        y = LabelEncoder().fit_transform(y)
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        X_train = X_train.to_numpy(dtype=float)
+        X_test = X_test.to_numpy(dtype=float)
+    elif dataset == 'glass':
+        df = pd.read_csv('./datasets/glass/processed.csv')
+        X = df.drop('label', axis=1)
+        y = df['label']
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        X_train = X_train.to_numpy(dtype=float)
+        X_test = X_test.to_numpy(dtype=float)
+        y_train = y_train.to_numpy(dtype=float)
+        y_test = y_test.to_numpy(dtype=float)
+    else:
+        with open(save_path, 'w') as f:
+            f.write(f'unknown dataset, exiting')
+        exit()
+    output = []
+    baseline_knn_acc = np.empty((len(ks)))
+    baseline_knn_time = np.empty((len(ks)))
+    
+    baseline_acc = np.empty((len(clfs)))
+    baseline_time = np.empty((len(clfs)))
+    
+    smart_acc = np.empty((len(clfs), len(ks)))
+    smart_time = np.empty((len(clfs), len(ks)))
+    output.append(f'dataset: {dataset.upper()}\n')
+    
+    for ik, k in enumerate(ks):
+        knn = KNeighborsClassifier(n_neighbors=k, algorithm='brute', metric='minkowski', p=2, n_jobs=-1)
+        
+        start = timer()
+        
+        knn.fit(X_train, y_train)
+        y_pred_test_knn = knn.predict(X_test)
+        
+        end =timer()
+        
+        baseline_knn_time[ik] = end - start
+        baseline_knn_acc[ik] = accuracy_score(y_test, y_pred_test_knn)
+
+        neighbors_test = knn.kneighbors(X_test, return_distance=False)   
+
+        for iclf, clf in enumerate(clfs):
+            
+            start = timer()
+            clf.fit(X_train, y_train)
+            y_pred_test_rf = clf.predict(X_test)
+            end = timer()
+            
+            baseline_time[iclf]=end-start
+            
+            start = timer()
+            y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clf, X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
+            end = timer()
+            smart_time[iclf, ik]=end-start
+            
+            baseline_acc[iclf] = accuracy_score(y_test, y_pred_test_rf)
+            smart_acc[iclf, ik]=accuracy_score(y_test, y_pred_test_smart)
+    baselines_dict_acc = {"KNN": list(baseline_knn_acc)}
+    baselines_dict_acc.update({pipeline_name(clf):baseline_acc[iclf] for iclf, clf in enumerate(clfs)})
+    
+    baselines_dict_time = {"KNN": list(baseline_knn_time)}
+    baselines_dict_time.update({pipeline_name(clf):baseline_time[iclf] for iclf, clf in enumerate(clfs)})
+    x={
+        "baseline_acc": baselines_dict_acc,
+        "smart_acc": {pipeline_name(clf):list(smart_acc[iclf]) for iclf, clf in enumerate(clfs)},
+        "baseline_time": baselines_dict_time,
+        "smart_time": {pipeline_name(clf):list(smart_time[iclf]) for iclf, clf in enumerate(clfs)},
+        "ks": ks
+    }
+    
+    with open(os.path.join(save_folder, f'results_{run_num}.json'),'w') as f:
+        f.write(json.dumps(x, indent=4))
+
+if __name__ == "__main__":
+    runs_amount = 40
+    for i in tqdm(range(runs_amount)):
+        generate_results('mnist', ks=[10, 25, 50, 80, 100, 120], run_num=i)
+        generate_results('usps', ks=[10, 25, 50, 80, 100, 120], run_num=i)
+        generate_results('glass', ks=[3, 5, 7, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170], run_num=i)
+        generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
+        generate_results('yeast', ks=[50, 100, 200, 300, 400, 500], run_num=i)
