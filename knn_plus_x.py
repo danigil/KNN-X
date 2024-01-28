@@ -54,6 +54,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
 
     clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier(), RandomForest(), HistGradientBoosting()]
     clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
+    clfs = [GaussianNB(), DecisionTreeClassifier()]
     clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
     
     if dataset == 'mnist':
@@ -110,6 +111,42 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         X_test = X_test.to_numpy(dtype=float)
         y_train = y_train.to_numpy(dtype=float)
         y_test = y_test.to_numpy(dtype=float)
+    elif dataset == 'covertype':
+        df = pd.read_csv('.\datasets\covertype\covtype.data', header=None)
+        X = df.iloc[:, :-1]
+        y = df.iloc[:, -1]
+
+        y = LabelEncoder().fit_transform(y)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+
+
+        X_train = X_train.to_numpy(dtype=int)
+        X_test = X_test.to_numpy(dtype=int)
+    elif dataset == 'skin':
+        df = pd.read_csv('.\datasets\skin_nonskin\Skin_NonSkin.txt', delim_whitespace=True, header=None)
+        X = df.iloc[:, :-1]
+        y = df.iloc[:, -1]
+
+        y = LabelEncoder().fit_transform(y)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+
+        X_train = X_train.to_numpy(dtype=int)
+        X_test = X_test.to_numpy(dtype=int)
+    elif dataset == 'statlog':
+        df_train = pd.read_csv('.\datasets\statlog\shuttle.trn', delim_whitespace=True, header=None)
+        df_test = pd.read_csv('.\datasets\statlog\shuttle.tst', delim_whitespace=True, header=None)
+        X_train = df_train.iloc[:, :-1]
+        y_train = df_train.iloc[:, -1]
+        X_test = df_test.iloc[:, :-1]
+        y_test = df_test.iloc[:, -1]
+
+        y_train = LabelEncoder().fit_transform(y_train)
+        y_test = LabelEncoder().fit_transform(y_test)
+
+        X_train = X_train.to_numpy(dtype=int)
+        X_test = X_test.to_numpy(dtype=int)
     else:
         with open(save_path, 'w') as f:
             f.write(f'unknown dataset, exiting')
@@ -173,9 +210,10 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         pickle.dump(results, f)
 
 if __name__ == "__main__":
-    runs_amount = 2
+    runs_amount = 1
     for i in tqdm(range(runs_amount)):
-        generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
+        # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
+        generate_results('covertype', ks=[2, 3, 4, 5, 6, 7, 8, 9, 10], thresholds=[0.6, 0.8, 1], run_num=i)
 
         # generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
         # generate_results('mnist', ks=[10, 25, 50, 80, 100, 120], run_num=i)
