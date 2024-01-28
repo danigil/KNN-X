@@ -12,6 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import clone
 from joblib import Parallel, delayed
 import numpy as np
 import pandas as pd
@@ -31,8 +32,6 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
     
     def smart_decision(clf, sample, neighbor_idxs):
         X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
-        # if np.all(y_neighbors == y_neighbors[0]):
-        #     return y_neighbors[0]
 
         unique, counts = np.unique(y_neighbors, return_counts=True)
         dominant_class = unique[np.argmax(counts)]
@@ -68,8 +67,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         y = np.hstack((y_train, y_test))
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
-    elif dataset == 'usps':
-        
+    elif dataset == 'usps': 
         with h5py.File('./datasets/usps.h5', 'r') as hf:
                 train = hf.get('train')
                 X_train = train.get('data')[:]
@@ -82,19 +80,6 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         y = np.hstack((y_train, y_test))
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
-        
-    elif dataset == 'caltech101':
-        ds, info = tfds.load('caltech101', split='train+test', with_info=True)
-        train_dataset = dataset['train']
-        test_dataset = dataset['test']
-        
-        train_data = tfds.as_dataframe(train_dataset, info)
-        X_train = train_data['image'].to_numpy()
-        y_train = train_data['label'].to_numpy()
-        
-        test_data = tfds.as_dataframe(test_dataset, info)
-        X_test = test_data['image'].to_numpy()
-        y_test = test_data['label'].to_numpy()
     elif dataset == 'wine':
         df = pd.read_csv('./datasets/wine/processed.csv')
         X = df.drop('label', axis=1)
@@ -105,20 +90,6 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         X_test = X_test.to_numpy(dtype=float)
         y_train = y_train.to_numpy(dtype=float)
         y_test = y_test.to_numpy(dtype=float)
-    elif dataset == 'cifar10':
-        (X_train, y_train), (X_test, y_test) = cifar10.load_data()
-        y_train = y_train.ravel()
-        y_test = y_test.ravel()
-        X_train = X_train.reshape(50000, -1)
-        X_test = X_test.reshape(10000, -1)
-    elif dataset == 'abalone':
-        df = pd.read_csv('./datasets/abalone/processed.csv')
-        X = df.drop('Sex', axis=1).to_numpy(dtype=float)
-        y = df['Sex'].to_numpy()
-        le = LabelEncoder()
-        y = le.fit_transform(y)
-        
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y, random_state=1)
     elif dataset == 'yeast':
         df = pd.read_csv('./datasets/yeast/processed.csv')
         X = df.drop('label', axis=1)
@@ -181,7 +152,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
 
             for itreshold, treshold in enumerate(thresholds):
                 start = timer()
-                y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clf, X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
+                y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clone(clf), X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
                 end = timer()
 
                 smart_time[iclf, ik, itreshold]=end-start
@@ -200,34 +171,6 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
 
     with open(os.path.join(save_folder, f'results_{run_num}.pickle'), 'wb') as f:
         pickle.dump(results, f)
-    
-
-    
-
-
-
-
-
-
-
-    # baselines_dict_acc = {"KNN": list(baseline_knn_acc)}
-    # baselines_dict_acc.update({pipeline_name(clf):baseline_acc[iclf] for iclf, clf in enumerate(clfs)})
-    
-    # baselines_dict_time = {"KNN": list(baseline_knn_time)}
-    # baselines_dict_time.update({pipeline_name(clf):baseline_time[iclf] for iclf, clf in enumerate(clfs)})
-
-
-    # x={
-    #     "baseline_acc": baselines_dict_acc,
-    #     "smart_acc": {pipeline_name(clf):list(smart_acc[iclf]) for iclf, clf in enumerate(clfs)},
-    #     "baseline_time": baselines_dict_time,
-    #     "smart_time": {pipeline_name(clf):list(smart_time[iclf]) for iclf, clf in enumerate(clfs)},
-    #     "ks": ks,
-    #     "tresholds": thresholds
-    # }
-    
-    # with open(os.path.join(save_folder, f'results_{run_num}.json'),'w') as f:
-    #     f.write(json.dumps(x, indent=4))
 
 if __name__ == "__main__":
     runs_amount = 2
