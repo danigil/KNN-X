@@ -168,6 +168,16 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
     smart_acc = np.empty((len(clfs), len(ks), len(thresholds)))
     smart_time = np.empty((len(clfs), len(ks), len(thresholds)))
     output.append(f'dataset: {dataset.upper()}\n')
+
+    for iclf, clf in enumerate(clfs):
+        logger.info(f"calcing (baseline) for clf: {pipeline_name(clf)}")
+        start = timer()
+        clf.fit(X_train, y_train)
+        y_pred_test_rf = clf.predict(X_test)
+        end = timer()
+        
+        baseline_time[iclf]=end-start
+        baseline_acc[iclf] = accuracy_score(y_test, y_pred_test_rf)
     
     for ik, k in enumerate(ks):
         logger.info(f"\tcalcing for k: {k}")
@@ -187,17 +197,9 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         neighbors_test = knn.kneighbors(X_test, return_distance=False)   
 
         for iclf, clf in enumerate(clfs):
-            logger.info(f"\t\tcalcing for clf: {pipeline_name(clf)}")
-            start = timer()
-            clf.fit(X_train, y_train)
-            y_pred_test_rf = clf.predict(X_test)
-            end = timer()
-            
-            baseline_time[iclf]=end-start
-            baseline_acc[iclf] = accuracy_score(y_test, y_pred_test_rf)
-
+            logger.info(f"\t\tcalcing (smart) for clf: {pipeline_name(clf)}")
             for itreshold, treshold in enumerate(thresholds):
-                logger.info(f"\t\t\tcalcing for threshold: {treshold}")
+                logger.info(f"\t\t\tcalcing (smart) for threshold: {treshold}")
                 start = timer()
                 y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clone(clf), X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
                 end = timer()
@@ -212,6 +214,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         "baseline_acc": baseline_acc,
         "smart_time": smart_time,
         "smart_acc": smart_acc,
+        "clfs": [pipeline_name(clf) for clf in clfs],
         "ks": ks,
         "tresholds": thresholds
     }
