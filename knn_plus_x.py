@@ -20,7 +20,7 @@ import h5py
 import os, sys
 from sklearn.neighbors import KNeighborsClassifier
 from tqdm import tqdm
-# from datasets.mnist import dataloader
+import datasets.mnist.dataloader
 from timeit import default_timer as timer
 import pickle
 import logging
@@ -68,7 +68,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
     
     if dataset == 'mnist':
 
-        dl = dataloader.ret_mnistdataloader()
+        dl = datasets.mnist.dataloader.ret_mnistdataloader()
         (X_train, y_train),(X_test, y_test) = dl.load_data()
         X_train = X_train.reshape(-1, 28 * 28)
         X_test = X_test.reshape(-1, 28 * 28)
@@ -91,35 +91,38 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     elif dataset == 'wine':
-        df = pd.read_csv('./datasets/wine/processed.csv')
-        X = df.drop('label', axis=1)
-        y = df['label']
-        
+        df = pd.read_csv(os.path.join('datasets', 'wine', 'winequality-white.csv'), delimiter=';')
+        X = df.iloc[:, :-1]
+        y = df.iloc[:, -1]
+
+        y = LabelEncoder().fit_transform(y)
+
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+
         X_train = X_train.to_numpy(dtype=float)
         X_test = X_test.to_numpy(dtype=float)
-        y_train = y_train.to_numpy(dtype=float)
-        y_test = y_test.to_numpy(dtype=float)
     elif dataset == 'yeast':
-        df = pd.read_csv('./datasets/yeast/processed.csv')
-        X = df.drop('label', axis=1)
-        y = df['label']
-        
+        df = pd.read_csv(os.path.join('datasets', 'yeast', 'yeast.data'), sep='\\s+', header=None)
+        X = df.iloc[:, 1:-1]
+        y = df.iloc[:, -1]
+
         y = LabelEncoder().fit_transform(y)
-        
+
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+
         X_train = X_train.to_numpy(dtype=float)
         X_test = X_test.to_numpy(dtype=float)
     elif dataset == 'glass':
-        df = pd.read_csv('./datasets/glass/processed.csv')
-        X = df.drop('label', axis=1)
-        y = df['label']
-        
+        df = pd.read_csv(os.path.join('datasets', 'glass', 'glass.data'), sep='\\s+', header=None)
+        X = df.iloc[:, 1:-1]
+        y = df.iloc[:, -1]
+
+        y = LabelEncoder().fit_transform(y)
+
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+
         X_train = X_train.to_numpy(dtype=float)
         X_test = X_test.to_numpy(dtype=float)
-        y_train = y_train.to_numpy(dtype=float)
-        y_test = y_test.to_numpy(dtype=float)
     elif dataset == 'covertype':
         df = pd.read_csv(os.path.join('datasets', 'covertype', 'covtype.data'), header=None)
         X = df.iloc[:, :-1]
@@ -133,7 +136,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         X_train = X_train.to_numpy(dtype=int)
         X_test = X_test.to_numpy(dtype=int)
     elif dataset == 'skin':
-        df = pd.read_csv(os.path.join('datasets', 'skin_nonskin', 'Skin_NonSkin.txt'), sep='\s+', header=None)
+        df = pd.read_csv(os.path.join('datasets', 'skin_nonskin', 'Skin_NonSkin.txt'), sep='\\s+', header=None)
         X = df.iloc[:, :-1]
         y = df.iloc[:, -1]
 
@@ -144,8 +147,8 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         X_train = X_train.to_numpy(dtype=int)
         X_test = X_test.to_numpy(dtype=int)
     elif dataset == 'statlog':
-        df_train = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\s+', header=None)
-        df_test = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\s+', header=None)
+        df_train = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
+        df_test = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
         X_train = df_train.iloc[:, :-1]
         y_train = df_train.iloc[:, -1]
         X_test = df_test.iloc[:, :-1]
@@ -156,6 +159,11 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
 
         X_train = X_train.to_numpy(dtype=int)
         X_test = X_test.to_numpy(dtype=int)
+
+        X = np.vstack((X_train, X_test))
+        y = np.hstack((y_train, y_test))
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     else:
         raise Exception(f'unknown dataset {dataset}')
     output = []
@@ -224,6 +232,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
 
 if __name__ == "__main__":
     runs_amount = 1
+    ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     for i in tqdm(range(runs_amount)):
         # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
         generate_results('covertype', ks=[2, 3, 4, 5, 6, 7, 8, 9, 10], thresholds=[0.6, 0.8, 1], run_num=i)
