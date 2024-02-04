@@ -231,13 +231,16 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         pickle.dump(results, f)
 
 if __name__ == "__main__":
-    runs_amount = 1
+    runs_amount = 10
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
-    for i in tqdm(range(runs_amount)):
+    thresholds = [0.6, 0.8, 0.9, 0.95, 1]
+    for dataset in ['yeast', 'covertype', 'mnist', 'skin', 'statlog', 'usps', 'wine']:
+        for i in range(runs_amount):
         # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
-        generate_results('covertype', ks=[2, 3, 4, 5, 6, 7, 8, 9, 10], thresholds=[0.6, 0.8, 1], run_num=i)
-        generate_results('statlog', ks=[2, 3, 4, 5, 6, 7, 8, 9, 10], thresholds=[0.6, 0.8, 1], run_num=i)
-        generate_results('skin', ks=[2, 3, 4, 5, 6, 7, 8, 9, 10], thresholds=[0.6, 0.8, 1], run_num=i)
+        # generate_results('covertype', ks=ks, thresholds=thresholds, run_num=i)
+        # generate_results('statlog', ks=ks, thresholds=thresholds, run_num=i)
+        # generate_results('skin', ks=ks, thresholds=thresholds, run_num=i)
+            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i)
 
 
         # generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
