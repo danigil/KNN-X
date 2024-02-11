@@ -68,8 +68,8 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
     
     if dataset == 'mnist':
 
-        dl = datasets.mnist.dataloader.ret_mnistdataloader()
-        (X_train, y_train),(X_test, y_test) = dl.load_data()
+        # dl = datasets.mnist.dataloader.ret_mnistdataloader()
+        (X_train, y_train),(X_test, y_test) = datasets.mnist.dataloader.load_data()
         X_train = X_train.reshape(-1, 28 * 28)
         X_test = X_test.reshape(-1, 28 * 28)
         
@@ -78,7 +78,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     elif dataset == 'usps': 
-        with h5py.File('./datasets/usps.h5', 'r') as hf:
+        with h5py.File(os.path.join('datasets', 'usps', 'usps.h5'), 'r') as hf:
                 train = hf.get('train')
                 X_train = train.get('data')[:]
                 y_train = train.get('target')[:]
@@ -231,10 +231,10 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         pickle.dump(results, f)
 
 if __name__ == "__main__":
-    runs_amount = 10
+    runs_amount = 6
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [0.6, 0.8, 0.9, 0.95, 1]
-    for dataset in ['yeast', 'covertype', 'mnist', 'skin', 'statlog', 'usps', 'wine']:
+    for dataset in ['covertype', 'skin']:
         for i in range(runs_amount):
         # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
         # generate_results('covertype', ks=ks, thresholds=thresholds, run_num=i)
