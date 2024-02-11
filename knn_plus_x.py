@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Literal
 from sklearn.model_selection import train_test_split
 # from tensorflow.keras.datasets import mnist, cifar10
 from sklearn.tree import DecisionTreeClassifier
@@ -33,7 +33,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_num=0):
+def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_num=0, knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
     logger.info(f'Generating results for dataset: {dataset}')
     save_folder = os.path.join('results', dataset)
     os.makedirs(save_folder, exist_ok=True)
@@ -224,10 +224,11 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         "smart_acc": smart_acc,
         "clfs": [pipeline_name(clf) for clf in clfs],
         "ks": ks,
-        "tresholds": thresholds
+        "tresholds": thresholds,
+        "knn_algo":knn_algo
     }
 
-    with open(os.path.join(save_folder, f'results_{run_num}.pickle'), 'wb') as f:
+    with open(os.path.join(save_folder, f'results_{run_num}_{knn_algo}.pickle'), 'wb') as f:
         pickle.dump(results, f)
 
 if __name__ == "__main__":
