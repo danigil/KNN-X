@@ -1,4 +1,5 @@
 import os, json, re, numpy as np
+from typing import Literal
 
 def parse_results_dict(results, clfs, ks):
     
@@ -31,7 +32,7 @@ def ret_clfs_ks(results):
     ks = results["ks"]
     return clfs, ks 
 
-def ret_avg_results(datasets=['wine', 'mnist', 'usps', 'glass', 'yeast']):
+def ret_avg_results(datasets=['wine', 'mnist', 'usps', 'glass', 'yeast'], knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
     from glob import glob
     import pickle
 
@@ -45,11 +46,12 @@ def ret_avg_results(datasets=['wine', 'mnist', 'usps', 'glass', 'yeast']):
         baseline_times = []
         smart_times = []
 
-        clfs = ['DecisionTree', 'GaussianNB', 'LogisticRegression', 'SVC']
-
-        for result_file in glob(f'{os.path.join("results", dataset)}/*.pickle'):
+        for result_file in glob(f'{os.path.join("results", dataset, "*.pickle")}'):
             with open(result_file, 'rb') as f:
                 result_dict = pickle.load(f)
+
+            if result_dict["knn_algo"] != knn_algo:
+                continue
 
             baseline_knn_acc = result_dict["baseline_knn_acc"]
             baseline_acc = result_dict["baseline_acc"]
@@ -69,23 +71,31 @@ def ret_avg_results(datasets=['wine', 'mnist', 'usps', 'glass', 'yeast']):
             baseline_times.append(baseline_time)
             smart_times.append(smart_time)
 
-        ret[dataset] = {
-            'dataset': dataset,
+        if len(baseline_knn_accs) == 0:
+            ret[dataset] = None
+        else:
+            ret[dataset] = {
+                'dataset': dataset,
+                'knn_algo': knn_algo,
 
-            "baseline_knn_acc": np.average(np.array(baseline_knn_accs), axis=0),
-            "baseline_acc": np.average(np.array(baseline_accs), axis=0),
-            "smart_acc": np.average(np.array(smart_accs), axis=0),
+                "baseline_knn_acc": np.average(np.array(baseline_knn_accs), axis=0),
+                "baseline_acc": np.average(np.array(baseline_accs), axis=0),
+                "smart_acc": np.average(np.array(smart_accs), axis=0),
 
-            "baseline_knn_time": np.average(np.array(baseline_knn_times), axis=0),
-            "baseline_time": np.average(np.array(baseline_times), axis=0),
-            "smart_time": np.average(np.array(smart_times), axis=0),
+                "baseline_knn_time": np.average(np.array(baseline_knn_times), axis=0),
+                "baseline_time": np.average(np.array(baseline_times), axis=0),
+                "smart_time": np.average(np.array(smart_times), axis=0),
 
-            'clfs': clfs,
-            'ks': result_dict['ks'],
-            'thresholds': result_dict['tresholds']
-        }
+                'clfs': result_dict['clfs'],
+                'ks': result_dict['ks'],
+                'thresholds': result_dict['tresholds']
+            }
 
-    return ret
+    ret = {k: v for k, v in ret.items() if v is not None}
+    if len(ret) == 0:
+        return None
+    else:
+        return ret
 
 
 if __name__=='__main__':
