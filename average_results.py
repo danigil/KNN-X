@@ -50,7 +50,7 @@ def ret_avg_results(datasets=['wine', 'mnist', 'usps', 'glass', 'yeast'], knn_al
             with open(result_file, 'rb') as f:
                 result_dict = pickle.load(f)
 
-            if result_dict["knn_algo"] != knn_algo:
+            if result_dict.get("knn_algo",'brute') != knn_algo:
                 continue
 
             baseline_knn_acc = result_dict["baseline_knn_acc"]
