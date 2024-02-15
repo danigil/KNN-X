@@ -232,10 +232,10 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         pickle.dump(results, f)
 
 if __name__ == "__main__":
-    runs_amount = 6
+    runs_amount = 1
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [0.6, 0.8, 0.9, 0.95, 1]
-    for dataset in ['covertype', 'skin']:
+    for dataset in ['covertype']:
         for i in range(runs_amount):
         # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
         # generate_results('covertype', ks=ks, thresholds=thresholds, run_num=i)
