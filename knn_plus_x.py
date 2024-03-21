@@ -1,29 +1,29 @@
-import json
+import os, sys
+import struct
+from array import array
 from typing import List, Literal
-from sklearn.model_selection import train_test_split
-# from tensorflow.keras.datasets import mnist, cifar10
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier as RandomForest, HistGradientBoostingClassifier as HistGradientBoosting
-from sklearn.metrics import accuracy_score
-from sklearn.naive_bayes import GaussianNB
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.preprocessing import LabelEncoder
-from sklearn.svm import SVC
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.base import clone
-from joblib import Parallel, delayed
+import logging
+import pickle
+
+from timeit import default_timer as timer
+
 import numpy as np
 import pandas as pd
 import h5py
-import os, sys
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-from tqdm import tqdm
-import datasets.mnist.dataloader
-from timeit import default_timer as timer
-import pickle
-import logging
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.base import clone
+
+from joblib import Parallel, delayed
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -33,43 +33,38 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_num=0, knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
-    logger.info(f'Generating results for dataset: {dataset}')
-    save_folder = os.path.join('results', dataset)
-    os.makedirs(save_folder, exist_ok=True)
-    
-    def smart_decision(clf, sample, neighbor_idxs):
-        X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
-
-        unique, counts = np.unique(y_neighbors, return_counts=True)
-        dominant_class = unique[np.argmax(counts)]
-        if counts[np.argmax(counts)] >= treshold*k:
-            return dominant_class
-        
-        else:
-            clf.fit(X_neighbors, y_neighbors)
-
-            return clf.predict(sample.reshape(1, -1))[0]
-        
-    def pipeline_name(clf):
-        if clf.__class__.__name__ == "Pipeline":
-            return clf[-1].__class__.__name__
-        else:
-            return clf.__class__.__name__
-        
-    logistic_clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
-    svm_clf = make_pipeline(StandardScaler(), SVC())
-
-    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier(), RandomForest(), HistGradientBoosting()]
-    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
-    # clfs = [GaussianNB(), DecisionTreeClassifier()]
-    # clfs = [DecisionTreeClassifier()]
-    clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
-    
+def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']):
     if dataset == 'mnist':
+        def read_images_labels(images_filepath, labels_filepath):        
+            labels = []
+            with open(os.path.join(os.path.dirname(__file__), 'datasets', 'mnist', labels_filepath), 'rb') as file:
+                magic, size = struct.unpack(">II", file.read(8))
+                if magic != 2049:
+                    raise ValueError('Magic number mismatch, expected 2049, got {}'.format(magic))
+                labels = array("B", file.read())        
+            
+            with open(os.path.join(os.path.dirname(__file__), 'datasets', 'mnist', images_filepath), 'rb') as file:
+                magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
+                if magic != 2051:
+                    raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
+                image_data = array("B", file.read())        
+            images = []
+            for i in range(size):
+                images.append([0] * rows * cols)
+            for i in range(size):
+                img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
+                img = img.reshape(28, 28)
+                images[i][:] = img            
+            
+            return np.array(images), np.array(labels)
+                
+        def load_data():
+            x_train, y_train = read_images_labels('train-images.idx3-ubyte', 'train-labels.idx1-ubyte')
+            x_test, y_test = read_images_labels('t10k-images.idx3-ubyte', 't10k-labels.idx1-ubyte')
+            return (x_train, y_train),(x_test, y_test)   
 
-        # dl = datasets.mnist.dataloader.ret_mnistdataloader()
-        (X_train, y_train),(X_test, y_test) = datasets.mnist.dataloader.load_data()
+
+        (X_train, y_train),(X_test, y_test) = load_data()
         X_train = X_train.reshape(-1, 28 * 28)
         X_test = X_test.reshape(-1, 28 * 28)
         
@@ -166,7 +161,41 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     else:
         raise Exception(f'unknown dataset {dataset}')
-    output = []
+
+    return X_train, X_test, y_train, y_test
+
+def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_num=0, knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
+    logger.info(f'Generating results for dataset: {dataset}')
+    save_folder = os.path.join('results', dataset)
+    os.makedirs(save_folder, exist_ok=True)
+    
+    X_train, X_test, y_train, y_test = load_dataset(dataset)
+
+    def smart_decision(clf, sample, neighbor_idxs):
+        X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
+
+        unique, counts = np.unique(y_neighbors, return_counts=True)
+        dominant_class = unique[np.argmax(counts)]
+        if counts[np.argmax(counts)] >= treshold*k:
+            return dominant_class
+        
+        else:
+            clf.fit(X_neighbors, y_neighbors)
+
+            return clf.predict(sample.reshape(1, -1))[0]
+        
+    def pipeline_name(clf):
+        if clf.__class__.__name__ == "Pipeline":
+            return clf[-1].__class__.__name__
+        else:
+            return clf.__class__.__name__
+     
+    logistic_clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+    svm_clf = make_pipeline(StandardScaler(), SVC())
+
+    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
+    clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
+    
     baseline_knn_acc = np.empty((len(ks)))
     baseline_knn_time = np.empty((len(ks)))
     
@@ -175,7 +204,6 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
     
     smart_acc = np.empty((len(clfs), len(ks), len(thresholds)))
     smart_time = np.empty((len(clfs), len(ks), len(thresholds)))
-    output.append(f'dataset: {dataset.upper()}\n')
 
     for iclf, clf in enumerate(clfs):
         logger.info(f"calcing (baseline) for clf: {pipeline_name(clf)}")
@@ -197,7 +225,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         knn.fit(X_train, y_train)
         y_pred_test_knn = knn.predict(X_test)
         
-        end =timer()
+        end = timer()
         
         baseline_knn_time[ik] = end - start
         baseline_knn_acc[ik] = accuracy_score(y_test, y_pred_test_knn)
@@ -232,16 +260,16 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_n
         pickle.dump(results, f)
 
 if __name__ == "__main__":
-    runs_amount = 1
+    runs_amount = 10
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [0.6, 0.8, 0.9, 0.95, 1]
-    for dataset in ['covertype']:
+    for dataset in ['mnist']:
         for i in range(runs_amount):
         # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
         # generate_results('covertype', ks=ks, thresholds=thresholds, run_num=i)
         # generate_results('statlog', ks=ks, thresholds=thresholds, run_num=i)
         # generate_results('skin', ks=ks, thresholds=thresholds, run_num=i)
-            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i)
+            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i, knn_algo='ball_tree')
 
 
         # generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
