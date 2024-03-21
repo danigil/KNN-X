@@ -263,18 +263,9 @@ if __name__ == "__main__":
     runs_amount = 10
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [0.6, 0.8, 0.9, 0.95, 1]
-    for dataset in ['mnist']:
+    datasets = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
+    knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
+    
+    for dataset in datasets:
         for i in range(runs_amount):
-        # generate_results('glass', ks=[3, 5, 7], thresholds=[0.6, 0.8], run_num=i)
-        # generate_results('covertype', ks=ks, thresholds=thresholds, run_num=i)
-        # generate_results('statlog', ks=ks, thresholds=thresholds, run_num=i)
-        # generate_results('skin', ks=ks, thresholds=thresholds, run_num=i)
-            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i, knn_algo='ball_tree')
-
-
-        # generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
-        # generate_results('mnist', ks=[10, 25, 50, 80, 100, 120], run_num=i)
-        # generate_results('usps', ks=[10, 25, 50, 80, 100, 120], run_num=i)
-        # generate_results('glass', ks=[3, 5, 7, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170], run_num=i)
-        # generate_results('wine', ks=[10, 20, 30, 50, 100, 150, 300, 400, 500], run_num=i)
-        # generate_results('yeast', ks=[50, 100, 200, 300, 400, 500], run_num=i)
+            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i, knn_algo=knn_algo)
