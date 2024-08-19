@@ -12,7 +12,7 @@ import pandas as pd
 import h5py
 
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
@@ -33,7 +33,6 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-
 
 def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']):
     if dataset == 'mnist':
@@ -185,17 +184,16 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
         print(f"Class {cls}: {count} members")
 
 
-    rskf = RepeatedStratifiedKFold(n_splits=10, n_repeats=5, random_state=42)
+    rskf = RepeatedKFold(n_splits=5, n_repeats=3)
     # for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
     #     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     #     y_train, y_test = y[train_index], y[test_index]
+    if not dataset in ('statlog', 'mnist', 'usps'):
+        X = X.to_numpy(dtype=int)
+
     for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index] 
         y_train, y_test = y[train_index], y[test_index]
-
-        if not dataset in ('statlog', 'mnist', 'usps'):
-            X_train = X_train.to_numpy(dtype=int)
-            X_test = X_test.to_numpy(dtype=int)
         
 
         def smart_decision(clf, sample, neighbor_idxs):
@@ -286,11 +284,11 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
         with open(os.path.join(save_folder, f'results_{i}_{knn_algo}.pickle'), 'wb') as f:
             pickle.dump(results, f)
 
-
 if __name__ == "__main__":
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [1]
-    datasets = ['covertype', 'glass', 'mnist', 'skin', 'statlog', 'usps', 'wine', 'yeast']
+    datasets1 = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
+    datasets = ['glass']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
     for dataset in datasets:
