@@ -290,7 +290,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
 if __name__ == "__main__":
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
     thresholds = [1]
-    datasets = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
+    datasets = ['covertype', 'glass', 'mnist', 'skin', 'statlog', 'usps', 'wine', 'yeast']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
     for dataset in datasets:

@@ -23,7 +23,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.base import clone
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
 
 from joblib import Parallel, delayed
 
@@ -188,7 +188,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
         print(f"Class {cls}: {count} members")
 
 
-    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=42)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
     # for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
     #     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     #     y_train, y_test = y[train_index], y[test_index]
@@ -214,7 +214,8 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
 
         clfs = [
             RandomForestClassifier(random_state=42),
-            GradientBoostingClassifier(random_state=42)
+            GradientBoostingClassifier(random_state=42),
+            HistGradientBoostingClassifier(random_state=42)
         ]
 
         clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
@@ -235,29 +236,47 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
         
         # logger.info(f'~~Finished~~ Generating results for dataset: {dataset}')
         results = {
-            "GradientBoosting_time": baseline_time[0],
-            "GradientBoosting_acc": baseline_acc[0],
-            "RandomForestClassifier_time": baseline_time[1],
-            "RandomForestClassifier_acc": baseline_acc[1]
+            "dataset": dataset,
+            "RandomForest_acc": baseline_acc[0],
+            "GradientBoosting_acc": baseline_acc[1],
+            "HistGradientBoosting_acc": baseline_acc[2]
         }
         all_results.append(results)
     
-    create_sota_results(all_results)
+    return create_sota_results(all_results)
+    
 
+from collections import OrderedDict
 def create_sota_results(l: List):
+    # Convert the list of dictionaries to a DataFrame
     df = pd.DataFrame(l)
-    averaged_results = df.mean().add_suffix('_avg').to_dict()
-    # print(averaged_results)
+
+    # Separate the columns that need to be averaged and the ones that should be left unchanged
+    to_average = df.drop(columns=["dataset"], errors='ignore')
+    to_keep = df["dataset"].iloc[0] if "dataset" in df.columns else None
+
+    # Compute the mean for the columns that need to be averaged
+    averaged_results = to_average.mean().add_suffix('_avg').to_dict()
+    
+    result = OrderedDict([("dataset", to_keep)])
+    result.update(averaged_results)
+
     import pprint
     pp = pprint.PrettyPrinter(depth=4)
-    pp.pprint(averaged_results)
+    pp.pprint(result)
+    return result
 
+import json
+import os
 if __name__ == "__main__":
     ks = [1]
     thresholds = [1]
-    datasets1 = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
-    datasets = ['wine']
+    datasets = ['covertype', 'glass', 'mnist', 'skin']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
-    for dataset in datasets:
-        generate_results(dataset, ks=ks, thresholds=thresholds, knn_algo=knn_algo)
+    if os.path.exists('results_file'):
+        os.remove('results_file')
+    with open('results_file', 'w') as f:
+        for dataset in datasets:
+            result = generate_results(dataset, ks=ks, thresholds=thresholds, knn_algo=knn_algo)
+            json.dump(result, f, indent=4)
