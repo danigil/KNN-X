@@ -92,6 +92,7 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         y = df.iloc[:, -1]
 
         y = LabelEncoder().fit_transform(y)
+        X = X.to_numpy(dtype=float)
 
         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
@@ -103,6 +104,7 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         y = df.iloc[:, -1]
 
         y = LabelEncoder().fit_transform(y)
+        X = X.to_numpy(dtype=float)
 
         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
@@ -114,6 +116,8 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         y = df.iloc[:, -1]
         y = LabelEncoder().fit_transform(y)
 
+        X = X.to_numpy(dtype=float)
+
         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
         # X_train = X_train.to_numpy(dtype=float)
@@ -124,6 +128,7 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         y = df.iloc[:, -1]
 
         y = LabelEncoder().fit_transform(y)
+        X= X.to_numpy(dtype=int)
 
         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
@@ -137,13 +142,15 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
 
         y = LabelEncoder().fit_transform(y)
 
+        X= X.to_numpy(dtype=int)
+
         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
         # X_train = X_train.to_numpy(dtype=int)
         # X_test = X_test.to_numpy(dtype=int)
     elif dataset == 'statlog':
         df_train = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
-        df_test = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
+        df_test = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.tst'), sep='\\s+', header=None)
         X_train = df_train.iloc[:, :-1]
         y_train = df_train.iloc[:, -1]
         X_test = df_test.iloc[:, :-1]
@@ -173,23 +180,23 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
     X, y = load_dataset(dataset)
     from collections import Counter
 
-    class_counts = Counter(y)
+    # class_counts = Counter(y)
 
-    # # Find the class with the least members
-    # least_common_class, least_common_count = min(class_counts.items(), key=lambda item: item[1])
-    # print(f"Class with the least members: {least_common_class}, Number of members: {least_common_count}")
-    print("Class distribution before removal:")
-    class_counts = Counter(y)
-    for cls, count in class_counts.items():
-        print(f"Class {cls}: {count} members")
+    # # # Find the class with the least members
+    # # least_common_class, least_common_count = min(class_counts.items(), key=lambda item: item[1])
+    # # print(f"Class with the least members: {least_common_class}, Number of members: {least_common_count}")
+    # print("Class distribution before removal:")
+    # class_counts = Counter(y)
+    # for cls, count in class_counts.items():
+    #     print(f"Class {cls}: {count} members")
 
 
-    rskf = RepeatedKFold(n_splits=5, n_repeats=3)
+    rskf = RepeatedKFold(n_splits=10, n_repeats=5)
     # for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
     #     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     #     y_train, y_test = y[train_index], y[test_index]
-    if not dataset in ('statlog', 'mnist', 'usps'):
-        X = X.to_numpy(dtype=int)
+    # if not dataset in ('statlog', 'mnist', 'usps'):
+    #     X = X.to_numpy(dtype=int)
 
     for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index] 
@@ -267,6 +274,8 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
 
                     smart_time[iclf, ik, itreshold]=end-start
                     smart_acc[iclf, ik, itreshold]=accuracy_score(y_test, y_pred_test_smart)
+
+            
         logger.info(f'~~Finished~~ Generating results for dataset: {dataset}')
         results = {
             "baseline_knn_time": baseline_knn_time,
@@ -286,9 +295,9 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
 
 if __name__ == "__main__":
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
-    thresholds = [1]
-    datasets1 = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
-    datasets = ['glass']
+    thresholds = [1.0,]
+    datasets = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
+    # datasets = ['glass']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
     for dataset in datasets:

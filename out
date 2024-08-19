@@ -1,0 +1,21 @@
+/home/ran/daniel/KNN-X/knn_plus_x.py:11: DeprecationWarning: 
+Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
+(to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
+but was not found to be installed on your system.
+If this would cause problems for you,
+please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
+        
+  import pandas as pd
+2024-08-19 16:23:25,795 - root - INFO - Generating results for dataset: covertype
+Class distribution before removal:
+Class 4: 9493 members
+Class 1: 283301 members
+Class 0: 211840 members
+Class 6: 20510 members
+Class 2: 35754 members
+Class 5: 17367 members
+Class 3: 2747 members
+2024-08-19 16:23:27,706 - root - INFO - calcing (baseline) for clf: DecisionTreeClassifier
+2024-08-19 16:23:34,656 - root - INFO - calcing (baseline) for clf: GaussianNB
+2024-08-19 16:23:35,319 - root - INFO - calcing (baseline) for clf: LogisticRegression
+2024-08-19 16:24:12,724 - root - INFO - calcing (baseline) for clf: SVC
