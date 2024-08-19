@@ -12,6 +12,7 @@ import pandas as pd
 import h5py
 
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
@@ -32,6 +33,7 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
 
 def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']):
     if dataset == 'mnist':
@@ -71,7 +73,7 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         X = np.vstack((X_train, X_test))
         y = np.hstack((y_train, y_test))
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     elif dataset == 'usps': 
         with h5py.File(os.path.join('datasets', 'usps', 'usps.h5'), 'r') as hf:
                 train = hf.get('train')
@@ -84,7 +86,7 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         X = np.vstack((X_train, X_test))
         y = np.hstack((y_train, y_test))
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     elif dataset == 'wine':
         df = pd.read_csv(os.path.join('datasets', 'wine', 'winequality-white.csv'), delimiter=';')
         X = df.iloc[:, :-1]
@@ -92,10 +94,10 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
 
         y = LabelEncoder().fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
-        X_train = X_train.to_numpy(dtype=float)
-        X_test = X_test.to_numpy(dtype=float)
+        # X_train = X_train.to_numpy(dtype=float)
+        # X_test = X_test.to_numpy(dtype=float)
     elif dataset == 'yeast':
         df = pd.read_csv(os.path.join('datasets', 'yeast', 'yeast.data'), sep='\\s+', header=None)
         X = df.iloc[:, 1:-1]
@@ -103,21 +105,20 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
 
         y = LabelEncoder().fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
-        X_train = X_train.to_numpy(dtype=float)
-        X_test = X_test.to_numpy(dtype=float)
+        # X_train = X_train.to_numpy(dtype=float)
+        # X_test = X_test.to_numpy(dtype=float)
     elif dataset == 'glass':
-        df = pd.read_csv(os.path.join('datasets', 'glass', 'glass.data'), sep='\\s+', header=None)
+        df = pd.read_csv(os.path.join('datasets', 'glass', 'glass.data'), sep=',', header=None)
         X = df.iloc[:, 1:-1]
         y = df.iloc[:, -1]
-
         y = LabelEncoder().fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
-        X_train = X_train.to_numpy(dtype=float)
-        X_test = X_test.to_numpy(dtype=float)
+        # X_train = X_train.to_numpy(dtype=float)
+        # X_test = X_test.to_numpy(dtype=float)
     elif dataset == 'covertype':
         df = pd.read_csv(os.path.join('datasets', 'covertype', 'covtype.data'), header=None)
         X = df.iloc[:, :-1]
@@ -125,11 +126,11 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
 
         y = LabelEncoder().fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
 
-        X_train = X_train.to_numpy(dtype=int)
-        X_test = X_test.to_numpy(dtype=int)
+        # X_train = X_train.to_numpy(dtype=int)
+        # X_test = X_test.to_numpy(dtype=int)
     elif dataset == 'skin':
         df = pd.read_csv(os.path.join('datasets', 'skin_nonskin', 'Skin_NonSkin.txt'), sep='\\s+', header=None)
         X = df.iloc[:, :-1]
@@ -137,10 +138,10 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
 
         y = LabelEncoder().fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
 
-        X_train = X_train.to_numpy(dtype=int)
-        X_test = X_test.to_numpy(dtype=int)
+        # X_train = X_train.to_numpy(dtype=int)
+        # X_test = X_test.to_numpy(dtype=int)
     elif dataset == 'statlog':
         df_train = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
         df_test = pd.read_csv(os.path.join('datasets', 'statlog', 'shuttle.trn'), sep='\\s+', header=None)
@@ -158,114 +159,139 @@ def load_dataset(dataset: Literal['covertype', 'glass', 'mnist', 'skin', 'shuttl
         X = np.vstack((X_train, X_test))
         y = np.hstack((y_train, y_test))
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, stratify=y)
     else:
         raise Exception(f'unknown dataset {dataset}')
 
-    return X_train, X_test, y_train, y_test
+    return X, y
 
-def generate_results(dataset: str, ks: List[int], thresholds: List[float], run_num=0, knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
+def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_algo:Literal['brute', 'kd_tree', 'ball_tree']='brute'):
     logger.info(f'Generating results for dataset: {dataset}')
     save_folder = os.path.join('results', dataset)
     os.makedirs(save_folder, exist_ok=True)
+
     
-    X_train, X_test, y_train, y_test = load_dataset(dataset)
+    X, y = load_dataset(dataset)
+    from collections import Counter
 
-    def smart_decision(clf, sample, neighbor_idxs):
-        X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
+    class_counts = Counter(y)
 
-        unique, counts = np.unique(y_neighbors, return_counts=True)
-        dominant_class = unique[np.argmax(counts)]
-        if counts[np.argmax(counts)] >= treshold*k:
-            return dominant_class
-        
-        else:
-            clf.fit(X_neighbors, y_neighbors)
+    # # Find the class with the least members
+    # least_common_class, least_common_count = min(class_counts.items(), key=lambda item: item[1])
+    # print(f"Class with the least members: {least_common_class}, Number of members: {least_common_count}")
+    print("Class distribution before removal:")
+    class_counts = Counter(y)
+    for cls, count in class_counts.items():
+        print(f"Class {cls}: {count} members")
 
-            return clf.predict(sample.reshape(1, -1))[0]
-        
-    def pipeline_name(clf):
-        if clf.__class__.__name__ == "Pipeline":
-            return clf[-1].__class__.__name__
-        else:
-            return clf.__class__.__name__
-     
-    logistic_clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
-    svm_clf = make_pipeline(StandardScaler(), SVC())
 
-    clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
-    clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
-    
-    baseline_knn_acc = np.empty((len(ks)))
-    baseline_knn_time = np.empty((len(ks)))
-    
-    baseline_acc = np.empty((len(clfs)))
-    baseline_time = np.empty((len(clfs)))
-    
-    smart_acc = np.empty((len(clfs), len(ks), len(thresholds)))
-    smart_time = np.empty((len(clfs), len(ks), len(thresholds)))
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
+    # for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
+    #     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+    #     y_train, y_test = y[train_index], y[test_index]
+    for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
+        X_train, X_test = X[train_index], X[test_index] 
+        y_train, y_test = y[train_index], y[test_index]
 
-    for iclf, clf in enumerate(clfs):
-        logger.info(f"calcing (baseline) for clf: {pipeline_name(clf)}")
-        start = timer()
-        clf.fit(X_train, y_train)
-        y_pred_test_rf = clf.predict(X_test)
-        end = timer()
+        if not dataset in ('statlog', 'mnist', 'usps'):
+            X_train = X_train.to_numpy(dtype=int)
+            X_test = X_test.to_numpy(dtype=int)
         
-        baseline_time[iclf]=end-start
-        baseline_acc[iclf] = accuracy_score(y_test, y_pred_test_rf)
-    
-    for ik, k in enumerate(ks):
-        logger.info(f"\tcalcing for k: {k}")
 
-        knn = KNeighborsClassifier(n_neighbors=k, algorithm='brute', metric='minkowski', p=2, n_jobs=-1)
-        
-        start = timer()
-        
-        knn.fit(X_train, y_train)
-        y_pred_test_knn = knn.predict(X_test)
-        
-        end = timer()
-        
-        baseline_knn_time[ik] = end - start
-        baseline_knn_acc[ik] = accuracy_score(y_test, y_pred_test_knn)
+        def smart_decision(clf, sample, neighbor_idxs):
+            X_neighbors, y_neighbors = X_train[neighbor_idxs], y_train[neighbor_idxs]
 
-        neighbors_test = knn.kneighbors(X_test, return_distance=False)   
+            unique, counts = np.unique(y_neighbors, return_counts=True)
+            dominant_class = unique[np.argmax(counts)]
+            if counts[np.argmax(counts)] >= treshold*k:
+                return dominant_class
+            
+            else:
+                clf.fit(X_neighbors, y_neighbors)
+
+                return clf.predict(sample.reshape(1, -1))[0]
+            
+        def pipeline_name(clf):
+            if clf.__class__.__name__ == "Pipeline":
+                return clf[-1].__class__.__name__
+            else:
+                return clf.__class__.__name__
+        
+        logistic_clf = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+        svm_clf = make_pipeline(StandardScaler(), SVC())
+
+        clfs = [svm_clf, GaussianNB(), logistic_clf, DecisionTreeClassifier()]
+        clfs = tuple(sorted(clfs, key=lambda clf: pipeline_name(clf)))
+        
+        baseline_knn_acc = np.empty((len(ks)))
+        baseline_knn_time = np.empty((len(ks)))
+        
+        baseline_acc = np.empty((len(clfs)))
+        baseline_time = np.empty((len(clfs)))
+        
+        smart_acc = np.empty((len(clfs), len(ks), len(thresholds)))
+        smart_time = np.empty((len(clfs), len(ks), len(thresholds)))
 
         for iclf, clf in enumerate(clfs):
-            logger.info(f"\t\tcalcing (smart) for clf: {pipeline_name(clf)}")
-            for itreshold, treshold in enumerate(thresholds):
-                logger.info(f"\t\t\tcalcing (smart) for threshold: {treshold}")
-                start = timer()
-                y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clone(clf), X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
-                end = timer()
+            logger.info(f"calcing (baseline) for clf: {pipeline_name(clf)}")
+            start = timer()
+            clf.fit(X_train, y_train)
+            y_pred_test_rf = clf.predict(X_test)
+            end = timer()
+            
+            baseline_time[iclf]=end-start
+            baseline_acc[iclf] = accuracy_score(y_test, y_pred_test_rf)
+        
+        for ik, k in enumerate(ks):
+            logger.info(f"\tcalcing for k: {k}")
 
-                smart_time[iclf, ik, itreshold]=end-start
-                smart_acc[iclf, ik, itreshold]=accuracy_score(y_test, y_pred_test_smart)
-    logger.info(f'~~Finished~~ Generating results for dataset: {dataset}')
-    results = {
-        "baseline_knn_time": baseline_knn_time,
-        "baseline_knn_acc": baseline_knn_acc,
-        "baseline_time": baseline_time,
-        "baseline_acc": baseline_acc,
-        "smart_time": smart_time,
-        "smart_acc": smart_acc,
-        "clfs": [pipeline_name(clf) for clf in clfs],
-        "ks": ks,
-        "tresholds": thresholds,
-        "knn_algo":knn_algo
-    }
+            knn = KNeighborsClassifier(n_neighbors=k, algorithm='brute', metric='minkowski', p=2, n_jobs=-1)
+            
+            start = timer()
+            
+            knn.fit(X_train, y_train)
+            y_pred_test_knn = knn.predict(X_test)
+            
+            end = timer()
+            
+            baseline_knn_time[ik] = end - start
+            baseline_knn_acc[ik] = accuracy_score(y_test, y_pred_test_knn)
 
-    with open(os.path.join(save_folder, f'results_{run_num}_{knn_algo}.pickle'), 'wb') as f:
-        pickle.dump(results, f)
+            neighbors_test = knn.kneighbors(X_test, return_distance=False)   
+
+            for iclf, clf in enumerate(clfs):
+                logger.info(f"\t\tcalcing (smart) for clf: {pipeline_name(clf)}")
+                for itreshold, treshold in enumerate(thresholds):
+                    logger.info(f"\t\t\tcalcing (smart) for threshold: {treshold}")
+                    start = timer()
+                    y_pred_test_smart=Parallel(n_jobs=-1)(delayed(smart_decision)(clone(clf), X_test[i], idxs) for i, idxs in enumerate(neighbors_test))
+                    end = timer()
+
+                    smart_time[iclf, ik, itreshold]=end-start
+                    smart_acc[iclf, ik, itreshold]=accuracy_score(y_test, y_pred_test_smart)
+        logger.info(f'~~Finished~~ Generating results for dataset: {dataset}')
+        results = {
+            "baseline_knn_time": baseline_knn_time,
+            "baseline_knn_acc": baseline_knn_acc,
+            "baseline_time": baseline_time,
+            "baseline_acc": baseline_acc,
+            "smart_time": smart_time,
+            "smart_acc": smart_acc,
+            "clfs": [pipeline_name(clf) for clf in clfs],
+            "ks": ks,
+            "tresholds": thresholds,
+            "knn_algo":knn_algo
+        }
+
+        with open(os.path.join(save_folder, f'results_{i}_{knn_algo}.pickle'), 'wb') as f:
+            pickle.dump(results, f)
+
 
 if __name__ == "__main__":
-    runs_amount = 10
     ks = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 50, 80, 100]
-    thresholds = [0.6, 0.8, 0.9, 0.95, 1]
+    thresholds = [1]
     datasets = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
     for dataset in datasets:
-        for i in range(runs_amount):
-            generate_results(dataset, ks=ks, thresholds=thresholds, run_num=i, knn_algo=knn_algo)
+        generate_results(dataset, ks=ks, thresholds=thresholds, knn_algo=knn_algo)
