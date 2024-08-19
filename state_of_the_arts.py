@@ -188,7 +188,7 @@ def generate_results(dataset: str, ks: List[int], thresholds: List[float], knn_a
         print(f"Class {cls}: {count} members")
 
 
-    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
+    rskf = RepeatedStratifiedKFold(n_splits=10, n_repeats=5, random_state=42)
     # for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
     #     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
     #     y_train, y_test = y[train_index], y[test_index]
@@ -271,7 +271,7 @@ import os
 if __name__ == "__main__":
     ks = [1]
     thresholds = [1]
-    datasets = ['covertype', 'glass', 'mnist', 'skin']
+    datasets = ['covertype', 'glass', 'mnist', 'skin', 'shuttle', 'usps', 'wine', 'yeast']
     knn_algo: Literal['brute', 'kd_tree', 'ball_tree'] = 'brute'
     
     if os.path.exists('results_file'):

@@ -1,0 +1,6 @@
+{
+    "dataset": "glass",
+    "RandomForest_acc_avg": 0.6166334440753045,
+    "GradientBoosting_acc_avg": 0.5942857142857142,
+    "HistGradientBoosting_acc_avg": 0.5943078626799557
+}
