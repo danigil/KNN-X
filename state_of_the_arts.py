@@ -43,7 +43,7 @@ def generate_results(dataset: str):
         print(f"Class {cls}: {count} members")
     print(delimiter)
 
-    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=42)
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)
             
     for i, (train_index, test_index) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train_index], X[test_index] 
